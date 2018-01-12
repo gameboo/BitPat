@@ -1,13 +1,12 @@
 // Bit-string pattern matching for Bluespec
 // Inspired by Morten Rhiger's "Type-Safe Pattern Combinators"
 // Matthew Naylor, University of Cambridge
+// Alexandre Joannou, University of Cambridge
 
 // Imports
 import List :: *;
 
 // Continuation combinators
-function Tuple2#(Bool, t0) success(t0 k) = tuple2(True, k);
-function Tuple2#(Bool, t0) failure(t0 k) = tuple2(False, k);
 function Tuple2#(Bool, t0) one(t1 v, function t0 k(t1 v)) =
   tuple2(True, k(v));
 function Tuple2#(Bool, t2) app(function Tuple2#(Bool, t1) m(t0 v),
@@ -19,34 +18,26 @@ endfunction
 
 // Bit patterns (type synonym)
 typedef function Tuple2#(Bool, t1) f(Bit#(n) x, t0 k)
-  BP#(numeric type n, type t0, type t1);
+  BitPat#(numeric type n, type t0, type t1);
 
 // Bit pattern combinators
-function Tuple2#(Bool, t1) numBP(Bit#(n) a, Bit#(n) b, t1 k) =
+function Tuple2#(Bool, t1) numBitPat(Bit#(n) a, Bit#(n) b, t1 k) =
   tuple2(a == b, k);
-function Tuple2#(Bool, t0) varBP(Bit#(n) x, function t0 f(Bit#(n) x)) =
+function Tuple2#(Bool, t0) varBitPat(Bit#(n) x, function t0 f(Bit#(n) x)) =
   one(x, f);
 function Tuple2#(Bool, t2)
-           catBP(BP#(n0, t0, t1) f, BP#(n1, t1, t2) g, Bit#(n2) n, t0 k)
+           catBitPat(BitPat#(n0, t0, t1) f, BitPat#(n1, t1, t2) g, Bit#(n2) n, t0 k)
              provisos (Add#(n0, n1, n2)) =
   app(f(truncateLSB(n)), g(truncate(n)), k);
 
-// Bit patterns (newtype)
-typedef struct {
-  BP#(n, t0, t1) fun;
-} BitPat#(numeric type n, type t0, type t1);
-
 // Bit pattern combinators
-function BitPat#(n, t0, t0) n(Bit#(n) x) =
-  BitPat { fun: numBP(x) };
+function BitPat#(n, t0, t0) n(Bit#(n) x) = numBitPat(x);
 
-function BitPat#(n, function t0 f(Bit#(n) x), t0) v() =
-  BitPat { fun: varBP };
+function BitPat#(n, function t0 f(Bit#(n) x), t0) v() = varBitPat;
 
 function BitPat#(n2, t0, t2) cat(BitPat#(n0, t0, t1) p,
                                  BitPat#(n1, t1, t2) q)
-           provisos(Add#(n0, n1, n2)) =
-  BitPat { fun: catBP(p.fun, q.fun) };
+           provisos(Add#(n0, n1, n2)) = catBitPat(p, q);
 
 // Type class for constructing patterns
 //
@@ -73,7 +64,7 @@ typedef struct {
 
 // Bit pattern with RHS
 function GuardedAction when(BitPat#(n, t, Action) p, t f, Bit#(n) subject);
-  Tuple2#(Bool, Action) res = p.fun(subject, f);
+  Tuple2#(Bool, Action) res = p(subject, f);
   return GuardedAction { guard: tpl_1(res), body: tpl_2(res) };
 endfunction
 
