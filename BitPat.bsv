@@ -59,25 +59,25 @@ endinstance
 // Guarded actions
 typedef struct {
   Bool guard;
-  Action body;
-} GuardedAction;
+  List#(Action) body;
+} GuardedActions;
 
 // Bit pattern with RHS
-function GuardedAction when(BitPat#(n, t, Action) p, t f, Bit#(n) subject);
-  Tuple2#(Bool, Action) res = p(subject, f);
-  return GuardedAction { guard: tpl_1(res), body: tpl_2(res) };
+function GuardedActions when(BitPat#(n, t, List#(Action)) p, t f, Bit#(n) subject);
+  Tuple2#(Bool, List#(Action)) res = p(subject, f);
+  return GuardedActions { guard: tpl_1(res), body: tpl_2(res) };
 endfunction
 
 // Switch statement
 typeclass MkSwitch#(type a, type n);
-  function a mkSwitch(Bit#(n) val, List#(GuardedAction) act);
+  function a mkSwitch(Bit#(n) val, List#(GuardedActions) act);
 endtypeclass
 
-instance MkSwitch#(List#(GuardedAction), n);
+instance MkSwitch#(List#(GuardedActions), n);
   function mkSwitch(val, acts) = List::reverse(acts);
 endinstance
 
-instance MkSwitch#(function a f(function GuardedAction f(Bit#(n) val)), n)
+instance MkSwitch#(function a f(function GuardedActions f(Bit#(n) val)), n)
          provisos (MkSwitch#(a, n));
   function mkSwitch(val, acts, f) = mkSwitch(val, Cons(f(val), acts));
 endinstance
@@ -87,14 +87,19 @@ function a switch(Bit#(n) val) provisos (MkSwitch#(a, n));
 endfunction
 
 // Generate rules from guarded actions
-module genRules#(List#(GuardedAction) actions) (Empty);
-  Integer n = length(actions);
-  List#(GuardedAction) acts = actions;
-  for (Integer i = 0; i < n; i=i+1) begin
-    GuardedAction act = List::head(acts);
-    rule generatedRule (act.guard);
-      act.body;
-    endrule
-    acts = List::tail(acts);
+module genRules#(List#(GuardedActions) gactions) (Empty);
+  Integer n0 = length(gactions);
+  List#(GuardedActions) gacts = gactions;
+  for (Integer i = 0; i < n0; i = i + 1) begin
+    GuardedActions acts = List::head(gacts);
+    Integer n1 = length(acts.body);
+    for (Integer j = 0; j < n1; j = j + 1) begin
+      Action body = List::head(acts.body);
+      rule generatedRule (acts.guard);
+        body;
+      endrule
+      acts.body = List::tail(acts.body);
+    end
+    gacts = List::tail(gacts);
   end
 endmodule
