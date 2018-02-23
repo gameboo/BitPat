@@ -2,16 +2,16 @@ import BitPat :: *;
 import List :: *;
 
 // Semantics of add instruction
-function List#(Action) add(Bit#(5) rs2, Bit#(5) rs1, Bit#(5) rd) =
-  List::cons(action
+function List#(List#(Action)) add(Bit#(5) rs2, Bit#(5) rs1, Bit#(5) rd) =
+  List::cons(List::cons(action
     $display("add %d, %d, %d", rd, rs1, rs2);
-  endaction,Nil);
+  endaction,Nil), Nil);
 
 // Semantics of addi instruction
-function List#(Action) addi(Bit#(12) imm, Bit#(5) rs1, Bit#(5) rd) =
-  List::cons(action
+function List#(List#(Action)) addi(Bit#(12) imm, Bit#(5) rs1, Bit#(5) rd) =
+  List::cons(List::cons(action
     $display("addi %d, %d, %d", rd, rs1, imm);
-  endaction, Nil);
+  endaction, Nil), Nil);
 
 module top ();
   Bit#(32) instr = 32'b0000000_00001_00010_000_00011_0110011;
@@ -22,4 +22,5 @@ module top ();
       when(pat(v,       v,    n(3'b0), v, n(7'b0010011)), addi)
     )
   );
+
 endmodule

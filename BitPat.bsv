@@ -59,12 +59,12 @@ endinstance
 // Guarded actions
 typedef struct {
   Bool guard;
-  List#(Action) body;
+  List#(List#(Action)) body;
 } GuardedActions;
 
 // Bit pattern with RHS
-function GuardedActions when(BitPat#(n, t, List#(Action)) p, t f, Bit#(n) subject);
-  Tuple2#(Bool, List#(Action)) res = p(subject, f);
+function GuardedActions when(BitPat#(n, t, List#(List#(Action))) p, t f, Bit#(n) subject);
+  Tuple2#(Bool, List#(List#(Action))) res = p(subject, f);
   return GuardedActions { guard: tpl_1(res), body: tpl_2(res) };
 endfunction
 
@@ -88,17 +88,26 @@ endfunction
 
 // Generate rules from guarded actions
 module genRules#(List#(GuardedActions) gactions) (Empty);
+  // all guarded actions
   Integer n0 = length(gactions);
   List#(GuardedActions) gacts = gactions;
   for (Integer i = 0; i < n0; i = i + 1) begin
     GuardedActions acts = List::head(gacts);
-    Integer n1 = length(acts.body);
+    Bool guard = acts.guard;
+    // all sequences in a guarded actions
+    List#(List#(Action)) sequences = acts.body;
+    Integer n1 = length(sequences);
     for (Integer j = 0; j < n1; j = j + 1) begin
-      Action body = List::head(acts.body);
-      rule generatedRule (acts.guard);
-        body;
-      endrule
-      acts.body = List::tail(acts.body);
+      // all actions in a sequence
+      List#(Action) actions = List::head(sequences);
+      Integer n2 = length(actions);
+      for (Integer k = 0; k < n2; k = k + 1) begin
+        rule generatedRule (guard);
+          head(actions);
+        endrule
+        actions = List::tail(actions);
+      end
+      sequences = List::tail(sequences);
     end
     gacts = List::tail(gacts);
   end
