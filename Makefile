@@ -1,6 +1,8 @@
 # BSV compiler flags
 BSC = bsc
-BSCFLAGS = -wait-for-license -suppress-warnings S0015 \
+RECIPEDIR = /home/aj443/devstuff/Recipe
+BSVPATH = +:$(RECIPEDIR)
+BSCFLAGS = -p $(BSVPATH) -wait-for-license -suppress-warnings S0015 \
            -suppress-warnings G0023 \
            -steps-warn-interval 400000 -check-assert \
            +RTS -K32M -RTS
