@@ -1,17 +1,16 @@
 import BitPat :: *;
+import Recipe :: *;
 import List :: *;
 
 // Semantics of add instruction
-function List#(Action) add(Bit#(5) rs2, Bit#(5) rs1, Bit#(5) rd) =
-  List::cons(action
-    $display("add %d, %d, %d", rd, rs1, rs2);
-  endaction,Nil);
+function Recipe add(Bit#(5) rs2, Bit#(5) rs1, Bit#(5) rd) = rAct(action
+  $display("add %d, %d, %d", rd, rs1, rs2);
+endaction);
 
 // Semantics of addi instruction
-function List#(Action) addi(Bit#(12) imm, Bit#(5) rs1, Bit#(5) rd) =
-  List::cons(action
-    $display("addi %d, %d, %d", rd, rs1, imm);
-  endaction, Nil);
+function Recipe addi(Bit#(12) imm, Bit#(5) rs1, Bit#(5) rd) = rAct(action
+  $display("addi %d, %d, %d", rd, rs1, imm);
+endaction);
 
 module top ();
   Bit#(32) instr = 32'b0000000_00001_00010_000_00011_0110011;

@@ -5,6 +5,7 @@
 
 // Imports
 import List :: *;
+import Recipe :: *;
 
 // Continuation combinators
 function Tuple2#(Bool, t0) one(t1 v, function t0 k(t1 v)) =
@@ -56,28 +57,30 @@ instance Pat#(function a f(BitPat#(n1, t1, t2) y), BitPat#(n0, t0, t1))
   function pat(x, y) = pat(cat(x, y));
 endinstance
 
-// Guarded actions
+// Guarded Recipe
 typedef struct {
   Bool guard;
-  List#(Action) body;
-} GuardedActions;
+  Recipe recipe;
+} GuardedRecipe;
+function Bool getGuard(GuardedRecipe gr) = gr.guard;
+function Recipe getRecipe(GuardedRecipe gr) = gr.recipe;
 
 // Bit pattern with RHS
-function GuardedActions when(BitPat#(n, t, List#(Action)) p, t f, Bit#(n) subject);
-  Tuple2#(Bool, List#(Action)) res = p(subject, f);
-  return GuardedActions { guard: tpl_1(res), body: tpl_2(res) };
+function GuardedRecipe when(BitPat#(n, t, Recipe) p, t f, Bit#(n) subject);
+  Tuple2#(Bool, Recipe) res = p(subject, f);
+  return GuardedRecipe { guard: tpl_1(res), recipe: tpl_2(res) };
 endfunction
 
 // Switch statement
 typeclass MkSwitch#(type a, type n);
-  function a mkSwitch(Bit#(n) val, List#(GuardedActions) act);
+  function a mkSwitch(Bit#(n) val, List#(GuardedRecipe) act);
 endtypeclass
 
-instance MkSwitch#(List#(GuardedActions), n);
+instance MkSwitch#(List#(GuardedRecipe), n);
   function mkSwitch(val, acts) = List::reverse(acts);
 endinstance
 
-instance MkSwitch#(function a f(function GuardedActions f(Bit#(n) val)), n)
+instance MkSwitch#(function a f(function GuardedRecipe f(Bit#(n) val)), n)
          provisos (MkSwitch#(a, n));
   function mkSwitch(val, acts, f) = mkSwitch(val, Cons(f(val), acts));
 endinstance
@@ -87,19 +90,13 @@ function a switch(Bit#(n) val) provisos (MkSwitch#(a, n));
 endfunction
 
 // Generate rules from guarded actions
-module genRules#(List#(GuardedActions) gactions) (Empty);
-  Integer n0 = length(gactions);
-  List#(GuardedActions) gacts = gactions;
-  for (Integer i = 0; i < n0; i = i + 1) begin
-    GuardedActions acts = List::head(gacts);
-    Integer n1 = length(acts.body);
-    for (Integer j = 0; j < n1; j = j + 1) begin
-      Action body = List::head(acts.body);
-      rule generatedRule (acts.guard);
-        body;
-      endrule
-      acts.body = List::tail(acts.body);
-    end
-    gacts = List::tail(gacts);
-  end
+module [Module] genRules#(List#(GuardedRecipe) grs) (Empty);
+  List#(Bool) guards = map(getGuard, grs);
+  List#(RecipeFSM) ms <- compileMutuallyExclusive(map(getRecipe, grs));
+  module runMachine#(Bool g, RecipeFSM m) ();
+    rule run (g);
+      m.start();
+    endrule
+  endmodule
+  zipWithM(runMachine, guards, ms);
 endmodule
