@@ -26,6 +26,11 @@ function Tuple2#(Bool, t1) numBitPat(Bit#(n) a, Bit#(n) b, t1 k) =
   tuple2(a == b, k);
 function Tuple2#(Bool, t0) varBitPat(Bit#(n) x, function t0 f(Bit#(n) x)) =
   one(x, f);
+function Tuple2#(Bool, t0) guardedVarBitPat(
+    function Bool guard(Bit#(n) x),
+    Bit#(n) x,
+    function t0 f(Bit#(n) x)
+  ) = tuple2(guard(x), f(x));
 function Tuple2#(Bool, t2)
            catBitPat(BitPat#(n0, t0, t1) f, BitPat#(n1, t1, t2) g, Bit#(n2) n, t0 k)
              provisos (Add#(n0, n1, n2)) =
@@ -35,6 +40,8 @@ function Tuple2#(Bool, t2)
 function BitPat#(n, t0, t0) n(Bit#(n) x) = numBitPat(x);
 
 function BitPat#(n, function t0 f(Bit#(n) x), t0) v() = varBitPat;
+
+function BitPat#(n, function t0 f(Bit#(n) x), t0) gv(function Bool g(Bit#(n) x)) = guardedVarBitPat(g);
 
 function BitPat#(n2, t0, t2) cat(BitPat#(n0, t0, t1) p,
                                  BitPat#(n1, t1, t2) q)

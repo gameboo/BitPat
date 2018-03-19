@@ -1,3 +1,6 @@
+// Matthew Naylor, University of Cambridge
+// Alexandre Joannou, University of Cambridge
+
 import BitPat :: *;
 import Recipe :: *;
 import List :: *;
@@ -7,18 +10,29 @@ function Recipe add(Bit#(5) rs2, Bit#(5) rs1, Bit#(5) rd) = rAct(action
   $display("add %d, %d, %d", rd, rs1, rs2);
 endaction);
 
-// Semantics of addi instruction
-function Recipe addi(Bit#(12) imm, Bit#(5) rs1, Bit#(5) rd) = rAct(action
-  $display("addi %d, %d, %d", rd, rs1, imm);
+// Semantics of addi instruction with rd == 5
+function Recipe addi_rd5(Bit#(12) imm, Bit#(5) rs1, Bit#(5) rd) = rAct(action
+  $display("addi %d, %d, %d (rd == 5)", rd, rs1, imm);
 endaction);
 
+// Semantics of addi instruction with rd != 5
+function Recipe addi_rdnot5(Bit#(12) imm, Bit#(5) rs1, Bit#(5) rd) = rAct(action
+  $display("addi %d, %d, %d (rd != 5)", rd, rs1, imm);
+endaction);
+
+function Bool eq (Bit#(n) x, Bit#(n) y) = x == y;
+function Bool neq (Bit#(n) x, Bit#(n) y) = x != y;
+
 module top ();
-  Bit#(32) instr = 32'b0000000_00001_00010_000_00011_0110011;
+  //Bit#(32) instr = 32'b0000000_00001_00010_000_00011_0110011;
+  Bit#(32) instr = 32'b0000000_00001_00010_000_00011_0010011;
+  //Bit#(32) instr = 32'b0000000_00001_00101_000_00011_0010011;
 
   genRules(
     switch(instr,
       when(pat(n(7'b0), v, v, n(3'b0), v, n(7'b0110011)), add),
-      when(pat(v,       v,    n(3'b0), v, n(7'b0010011)), addi)
+      when(pat(v,  gv(eq(5)), n(3'b0), v, n(7'b0010011)), addi_rd5),
+      when(pat(v, gv(neq(5)), n(3'b0), v, n(7'b0010011)), addi_rdnot5)
     )
   );
 endmodule
