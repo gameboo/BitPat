@@ -69,6 +69,14 @@ instance Pat#(function a f(BitPat#(n1, t1, t2) y), BitPat#(n0, t0, t1))
   function pat(x, y) = pat(cat(x, y));
 endinstance
 
+function BitPat#(n, t0, t1) guarded(BitPat#(n, t0, t1) p, function Bool g(Bit#(n) x));
+  function Tuple2#(Bool, t1) wrapGuard (Bit#(n) s, t0 f);
+    match {.b,.r} = p(s, f);
+    return tuple2(g(s) && b, r);
+  endfunction
+  return wrapGuard;
+endfunction
+
 // Guarded Recipe
 typedef struct {
   Bool guard;
