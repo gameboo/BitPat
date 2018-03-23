@@ -5,6 +5,7 @@
 
 // Imports
 import List :: *;
+import Printf :: *;
 import Recipe :: *;
 
 // Continuation combinators
@@ -26,6 +27,8 @@ function Tuple2#(Bool, t1) numBitPat(Bit#(n) a, Bit#(n) b, t1 k) =
   tuple2(a == b, k);
 function Tuple2#(Bool, t0) varBitPat(Bit#(n) x, function t0 f(Bit#(n) x)) =
   one(x, f);
+function Tuple2#(Bool, t0) sizedVarBitPat(Integer sz, Bit#(n) x, function t0 f(Bit#(n) x)) =
+  (sz == valueOf(n)) ? one(x, f) : error(sprintf("BitPat::sizedVarBitPat - Expecting Bit#(%0d) variable, seen Bit#(%0d) variable", sz, valueOf(n)));
 function Tuple2#(Bool, t0) guardedVarBitPat(
     function Bool guard(Bit#(n) x),
     Bit#(n) x,
@@ -40,6 +43,8 @@ function Tuple2#(Bool, t2)
 function BitPat#(n, t0, t0) n(Bit#(n) x) = numBitPat(x);
 
 function BitPat#(n, function t0 f(Bit#(n) x), t0) v() = varBitPat;
+
+function BitPat#(n, function t0 f(Bit#(n) x), t0) sv(Integer x) = sizedVarBitPat(x);
 
 function BitPat#(n, function t0 f(Bit#(n) x), t0) gv(function Bool g(Bit#(n) x)) = guardedVarBitPat(g);
 
