@@ -23,6 +23,7 @@ typedef function Tuple2#(Bool, t1) f(Bit#(n) x, t0 k)
   BitPat#(numeric type n, type t0, type t1);
 
 // Bit pattern combinators
+function Tuple2#(Bool, t0) successBitPat(Bit#(n) b, t0 k) = tuple2(True, k);
 function Tuple2#(Bool, t1) numBitPat(Bit#(n) a, Bit#(n) b, t1 k) =
   tuple2(a == b, k);
 function Tuple2#(Bool, t0) varBitPat(Bit#(n) x, function t0 f(Bit#(n) x)) =
@@ -76,6 +77,48 @@ function BitPat#(n, t0, t1) guarded(BitPat#(n, t0, t1) p, function Bool g(Bit#(n
   endfunction
   return wrapGuard;
 endfunction
+
+// Type-level pattern
+////////////////////////////////////////////////////////////////////////////////
+
+typedef struct {left l; right r;} PCons#(type left, type right);
+typedef struct {} PNil;
+
+typedef struct {} V#(type t);
+typedef struct {} N#(numeric type w, numeric type v);
+
+typedef PCons#(t1, PNil) Pat1#(type t1);
+typedef PCons#(t1, Pat1#(t2)) Pat2#(type t1, type t2);
+typedef PCons#(t1, Pat2#(t2, t3)) Pat3#(type t1, type t2, type t3);
+typedef PCons#(t1, Pat3#(t2, t3, t4)) Pat4#(type t1, type t2, type t3, type t4);
+typedef PCons#(t1, Pat4#(t2, t3, t4, t5)) Pat5#(type t1, type t2, type t3, type t4, type t5);
+typedef PCons#(t1, Pat5#(t2, t3, t4, t5, t6)) Pat6#(type t1, type t2, type t3, type t4, type t5, type t6);
+
+typeclass ToBitPat#(type a, numeric type n, type t0, type t1)
+  dependencies (a determines (n, t0, t1));
+  function BitPat#(n, t0, t1) toBitPat (a x);
+endtypeclass
+
+instance ToBitPat#(PNil, 0, t0, t0);
+  function BitPat#(0, t0, t0) toBitPat (PNil x) = successBitPat;
+  //function BitPat#(0, t0, t0) toBitPat (PNil x) = numBitPat(0);
+endinstance
+
+instance ToBitPat#(PCons#(left, right), n2, t0, t2)
+  provisos (ToBitPat#(left, n0, t0, t1), ToBitPat#(right, n1, t1, t2), Add#(n0, n1, n2));
+  function BitPat#(n2, t0, t2) toBitPat (PCons#(left, right) x) = cat(toBitPat(x.l), toBitPat(x.r));
+endinstance
+
+instance ToBitPat#(V#(t), n, function t0 f(Bit#(n) x), t0) provisos (Bits#(t, n));
+  function BitPat#(n, function t0 f(Bit#(n) x), t0) toBitPat (V#(t) x) = v;
+endinstance
+
+instance ToBitPat#(N#(n,v), n, t0, t0);
+  function BitPat#(n, t0, t0) toBitPat (N#(n,v) x) = n(fromInteger(valueOf(v)));
+endinstance
+
+// user provided util functions
+////////////////////////////////////////////////////////////////////////////////
 
 // Guarded Recipe
 typedef struct {
