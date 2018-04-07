@@ -5,8 +5,8 @@ BSVPATH = +:$(RECIPEDIR)
 BSCFLAGS = -p $(BSVPATH)
 
 # Top level module
-TOPFILE = Top.bsv
-TOPMOD = top
+TOPFILE = Example.bsv
+TOPMOD = bitPatExample
 
 .PHONY: sim
 sim: $(TOPMOD)
